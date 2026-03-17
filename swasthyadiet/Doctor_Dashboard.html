@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swasthya Sankul — Doctor Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#1a6b3c; --green-light:#2d9e5f; --green-pale:#e8f5ee;
+  --blue:#1565c0; --blue-light:#1976d2; --blue-pale:#e3f2fd;
+  --cream:#fdfaf5; --dark:#1a2e1a; --text:#2c3e2c;
+  --text-light:#5a7a5a; --white:#ffffff;
+  --shadow:0 8px 32px rgba(0,0,0,0.12); --radius:16px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:#f0f4f8; color:#333; min-height:100vh; }
+
+/* ── LOGIN SCREEN ── */
+.login-screen {
+  position:fixed; inset:0; background:linear-gradient(135deg,#0d3b22 0%,#1a6b3c 50%,#0d47a1 100%);
+  display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;
+}
+.login-card {
+  background:#fff; border-radius:24px; padding:40px 36px;
+  width:100%; max-width:400px; text-align:center;
+  box-shadow:0 30px 80px rgba(0,0,0,0.3);
+}
+.login-logo {
+  width:72px; height:72px; background:linear-gradient(135deg,var(--green),var(--green-light));
+  border-radius:20px; margin:0 auto 20px; display:flex; align-items:center;
+  justify-content:center; font-size:32px; box-shadow:0 8px 24px rgba(26,107,60,0.3);
+}
+.login-title { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:var(--dark); margin-bottom:6px; }
+.login-sub { font-size:13px; color:#888; margin-bottom:28px; line-height:1.5; }
+.login-label { font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block; text-align:left; }
+.login-input {
+  width:100%; padding:14px 18px; border:2px solid #e8eae8;
+  border-radius:12px; font-size:18px; font-family:'DM Sans',sans-serif;
+  text-align:center; letter-spacing:6px; outline:none; margin-bottom:8px;
+  transition:border-color 0.2s;
+}
+.login-input:focus { border-color:var(--green); box-shadow:0 0 0 4px rgba(26,107,60,0.1); }
+.login-error { color:#c62828; font-size:13px; margin-bottom:14px; min-height:18px; }
+.btn-login {
+  width:100%; padding:15px; background:linear-gradient(135deg,var(--green),var(--green-light));
+  color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700;
+  cursor:pointer; font-family:'DM Sans',sans-serif; letter-spacing:0.3px;
+  box-shadow:0 6px 20px rgba(26,107,60,0.35); transition:transform 0.15s;
+}
+.btn-login:active { transform:scale(0.98); }
+.login-hint { font-size:11px; color:#bbb; margin-top:16px; }
+
+/* ── MAIN DASHBOARD ── */
+.dashboard { display:none; min-height:100vh; }
+
+/* Header */
+.dash-header {
+  background:linear-gradient(135deg,var(--green),#0f4a28);
+  padding:20px 28px; display:flex; align-items:center;
+  justify-content:space-between; flex-wrap:wrap; gap:12px;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,0.2);
+}
+.dh-left { display:flex; align-items:center; gap:14px; }
+.dh-logo { width:48px; height:48px; background:rgba(255,255,255,0.15); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; border:1px solid rgba(255,255,255,0.2); }
+.dh-title { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:#fff; line-height:1.1; }
+.dh-sub { font-size:12px; color:rgba(255,255,255,0.65); margin-top:1px; }
+.dh-right { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.btn-hdr { padding:9px 16px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; border:none; display:flex; align-items:center; gap:6px; }
+.btn-refresh { background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.25); }
+.btn-export-hdr { background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.25); }
+.btn-logout { background:rgba(220,50,50,0.25); color:#fff; border:1px solid rgba(220,50,50,0.4); }
+.live-badge { display:flex; align-items:center; gap:6px; background:rgba(0,200,83,0.2); border:1px solid rgba(0,200,83,0.4); border-radius:20px; padding:5px 12px; }
+.live-dot { width:8px; height:8px; border-radius:50%; background:#00c853; box-shadow:0 0 8px #00c853; animation:blink 1.5s infinite; }
+.live-text { font-size:11px; font-weight:700; color:#69f0ae; letter-spacing:1px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Body */
+.dash-body { padding:24px 28px; max-width:1400px; margin:0 auto; }
+
+/* Stats row */
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+.stat-card {
+  background:#fff; border-radius:16px; padding:20px 22px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #eee;
+  display:flex; align-items:center; gap:16px;
+}
+.stat-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.stat-icon.green { background:#e8f5ee; }
+.stat-icon.blue { background:#e3f2fd; }
+.stat-icon.orange { background:#fff3e0; }
+.stat-icon.purple { background:#f3e5f5; }
+.stat-icon.red { background:#ffebee; }
+.stat-num { font-size:28px; font-weight:800; color:var(--dark); line-height:1; }
+.stat-label { font-size:12px; color:#888; margin-top:3px; font-weight:500; }
+.stat-delta { font-size:11px; font-weight:600; color:#2e7d32; margin-top:2px; }
+
+/* Chart area */
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+.chart-card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #eee; }
+.chart-title { font-size:14px; font-weight:700; color:var(--dark); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.bar-chart { display:flex; flex-direction:column; gap:10px; }
+.bar-row { display:flex; align-items:center; gap:10px; }
+.bar-label { font-size:12px; font-weight:600; color:#555; min-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bar-track { flex:1; height:20px; background:#f5f5f5; border-radius:10px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:10px; display:flex; align-items:center; padding-left:8px; font-size:10px; font-weight:700; color:#fff; transition:width 0.6s ease; min-width:24px; }
+.bar-fill.green { background:linear-gradient(90deg,var(--green),var(--green-light)); }
+.bar-fill.blue { background:linear-gradient(90deg,#1565c0,#1976d2); }
+.bar-fill.orange { background:linear-gradient(90deg,#e65100,#f57c00); }
+.bar-fill.purple { background:linear-gradient(90deg,#6a1b9a,#8e24aa); }
+.bar-count { font-size:12px; font-weight:700; color:#555; min-width:24px; text-align:right; }
+
+/* Donut-style diet chart */
+.diet-chart { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+.diet-legend { display:flex; flex-direction:column; gap:10px; flex:1; }
+.diet-item { display:flex; align-items:center; gap:10px; }
+.diet-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+.diet-name { font-size:13px; color:#555; flex:1; }
+.diet-pct { font-size:14px; font-weight:700; color:var(--dark); }
+
+/* Filters */
+.filters-bar {
+  background:#fff; border-radius:14px; padding:16px 20px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #eee;
+  margin-bottom:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+}
+.filter-label { font-size:12px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; }
+.filter-input { flex:1; min-width:160px; padding:10px 14px; border:1.5px solid #e8eae8; border-radius:10px; font-size:13px; font-family:'DM Sans',sans-serif; outline:none; }
+.filter-input:focus { border-color:var(--green); }
+.filter-sel { padding:10px 12px; border:1.5px solid #e8eae8; border-radius:10px; font-size:13px; font-family:'DM Sans',sans-serif; background:#fff; outline:none; cursor:pointer; }
+.btn-filter { padding:10px 16px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; border:none; }
+.btn-csv { background:var(--green); color:#fff; }
+.btn-clr { background:#ffebee; color:#c62828; }
+.results-count { font-size:12px; color:#888; font-weight:500; white-space:nowrap; }
+
+/* Patient Table */
+.table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #eee; overflow:hidden; }
+.table-wrap { overflow-x:auto; }
+table.pt { width:100%; border-collapse:collapse; font-size:13px; }
+table.pt thead { position:sticky; top:0; z-index:10; }
+table.pt th { background:#f8f9ff; color:#1a237e; font-weight:700; padding:13px 14px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid #e8eaf6; white-space:nowrap; }
+table.pt td { padding:12px 14px; border-bottom:1px solid #f5f5f5; vertical-align:top; }
+table.pt tr:hover td { background:#fafeff; }
+table.pt tr:last-child td { border-bottom:none; }
+.pt-name { font-weight:700; color:var(--dark); font-size:14px; }
+.pt-meta { font-size:11px; color:#888; margin-top:2px; }
+.pt-date { font-size:12px; color:#555; }
+.pt-time { font-size:11px; color:#aaa; }
+.sym-tag { display:inline-block; background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:2px 8px; font-size:10.5px; font-weight:600; margin:2px 2px 0 0; }
+.sym-tag.more { background:#f5f5f5; color:#888; }
+.diet-badge { display:inline-block; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; }
+.diet-veg { background:#e8f5e9; color:#2e7d32; }
+.diet-nonveg { background:#fff3e0; color:#e65100; }
+.diet-vegan { background:#f3e5f5; color:#6a1b9a; }
+.btn-view { background:var(--green); color:#fff; border:none; border-radius:8px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }
+.btn-view:hover { background:var(--green-light); }
+.followup-badge { display:inline-block; border-radius:8px; padding:2px 8px; font-size:10px; font-weight:600; }
+.fq-yes { background:#e8f5e9; color:#2e7d32; }
+.fq-no { background:#f5f5f5; color:#aaa; }
+
+/* Empty state */
+.empty-state { text-align:center; padding:60px 20px; }
+.empty-icon { font-size:64px; margin-bottom:16px; }
+.empty-title { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--dark); margin-bottom:8px; }
+.empty-sub { font-size:14px; color:#888; line-height:1.6; max-width:360px; margin:0 auto; }
+
+/* Patient Detail Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:500; display:none; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
+.modal-overlay.active { display:flex; }
+.modal-card { background:#fff; border-radius:20px; width:100%; max-width:600px; margin:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden; }
+.modal-header { background:linear-gradient(135deg,var(--green),#0f4a28); padding:20px 24px; display:flex; justify-content:space-between; align-items:flex-start; }
+.modal-name { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:#fff; }
+.modal-meta { font-size:12px; color:rgba(255,255,255,0.7); margin-top:3px; }
+.modal-close { background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.modal-body { padding:20px 24px; }
+.modal-section { margin-bottom:18px; }
+.modal-section-title { font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.modal-section-title::after { content:''; flex:1; height:1px; background:#f0f0f0; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.detail-item { background:#f8f9f8; border-radius:10px; padding:10px 12px; }
+.detail-label { font-size:10px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+.detail-value { font-size:13px; font-weight:600; color:var(--dark); }
+.fq-block { background:#f0f4ff; border:1px solid #c5cae9; border-radius:10px; padding:12px; margin-bottom:10px; }
+.fq-symptom { font-size:11px; font-weight:700; color:#1565c0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+.fq-item { display:flex; gap:8px; font-size:12px; margin-bottom:4px; align-items:flex-start; }
+.fq-q { color:#888; flex:1; }
+.fq-a { font-weight:600; color:var(--dark); text-align:right; flex:1; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .dash-body { padding:16px; }
+  .charts-row { grid-template-columns:1fr; }
+  .stats-row { grid-template-columns:1fr 1fr; }
+  .dh-right .live-badge { display:none; }
+  .detail-grid { grid-template-columns:1fr; }
+}
+@media(max-width:480px) {
+  .stats-row { grid-template-columns:1fr 1fr; }
+  .dash-header { padding:16px; }
+}
+
+/* ═══ SUBSCRIPTION TAB ═══ */
+.tabs-bar { display:flex; gap:4px; background:#f0f4f8; padding:6px; border-radius:12px; margin-bottom:20px; }
+.tab-btn { flex:1; padding:10px 16px; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; color:#888; background:transparent; transition:all 0.2s; }
+.tab-btn.active { background:#fff; color:var(--blue); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* Sub table */
+.sub-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid #eee; overflow:hidden; margin-bottom:20px; }
+.sub-card-header { background:linear-gradient(135deg,#0d47a1,#1565c0); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; }
+.sub-card-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#fff; }
+.sub-card-sub { font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px; }
+.sub-revenue-badge { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:10px; padding:8px 14px; text-align:center; }
+.sub-rev-num { font-size:22px; font-weight:800; color:#fff; }
+.sub-rev-label { font-size:10px; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+
+table.st { width:100%; border-collapse:collapse; font-size:13px; }
+table.st th { background:#e8eaf6; color:#1a237e; font-weight:700; padding:11px 14px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid #c5cae9; white-space:nowrap; }
+table.st td { padding:11px 14px; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
+table.st tr:hover td { background:#f8f9ff; }
+.sub-status-active { display:inline-flex; align-items:center; gap:5px; background:#e8f5e9; color:#2e7d32; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; }
+.sub-status-expired { display:inline-flex; align-items:center; gap:5px; background:#ffebee; color:#c62828; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; }
+.sub-status-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.sub-status-dot.green { background:#2e7d32; }
+.sub-status-dot.red { background:#c62828; }
+.txn-code { font-family:monospace; font-size:12px; background:#f5f5f5; padding:3px 8px; border-radius:6px; color:#333; letter-spacing:1px; }
+.btn-revoke { background:#ffebee; color:#c62828; border:1px solid #ffcdd2; border-radius:8px; padding:5px 10px; font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.btn-grant { background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; border-radius:8px; padding:5px 10px; font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+/* Revenue stats */
+.rev-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.rev-stat { background:#fff; border-radius:12px; padding:16px; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center; }
+.rev-stat-num { font-size:24px; font-weight:800; color:var(--blue); }
+.rev-stat-label { font-size:11px; color:#888; margin-top:3px; font-weight:500; }
+
+/* Grant subscription form */
+.grant-form { background:#e8f5e9; border:1.5px solid #a5d6a7; border-radius:12px; padding:14px; margin-bottom:16px; }
+.grant-form-title { font-size:12px; font-weight:700; color:#2e7d32; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+.grant-row { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+.grant-inp { flex:1; min-width:140px; padding:9px 12px; border:1.5px solid #a5d6a7; border-radius:9px; font-size:13px; font-family:'DM Sans',sans-serif; outline:none; background:#fff; }
+.grant-inp:focus { border-color:#2e7d32; }
+.btn-grant-submit { padding:9px 16px; background:#2e7d32; color:#fff; border:none; border-radius:9px; font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }
+
+
+/* ═══ UPLOADS IN DASHBOARD ═══ */
+.upload-badge { display:inline-flex; align-items:center; gap:4px; border-radius:8px; padding:3px 8px; font-size:10px; font-weight:600; }
+.upload-badge.has { background:#f3e5f5; color:#6a1b9a; }
+.upload-badge.none { background:#f5f5f5; color:#aaa; }
+.upload-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.upload-file-item { display:flex; align-items:center; gap:8px; background:#f8f4ff; border:1px solid #d0c8f0; border-radius:8px; padding:8px 10px; }
+.upload-file-icon { font-size:18px; flex-shrink:0; }
+.upload-file-name { font-size:11px; font-weight:600; color:#5c35a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.upload-file-meta { font-size:10px; color:#aaa; }
+
+
+/* ═══ DATA BRIDGE ═══ */
+.bridge-banner {
+  background: linear-gradient(135deg, #fff8e1, #fffde7);
+  border: 1.5px solid #ffe082; border-radius: 14px;
+  padding: 16px 20px; margin-bottom: 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.bridge-icon { font-size: 28px; flex-shrink: 0; }
+.bridge-title { font-size: 14px; font-weight: 700; color: #f57f17; margin-bottom: 4px; }
+.bridge-sub { font-size: 12px; color: #795548; line-height: 1.6; margin-bottom: 10px; }
+.bridge-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.bridge-btn { padding: 8px 14px; border: none; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; gap: 6px; }
+.bridge-paste { background: #1565c0; color: #fff; }
+.bridge-import { background: #2e7d32; color: #fff; }
+.bridge-howto { font-size: 11px; color: #888; line-height: 1.6; }
+.bridge-howto strong { color: #555; }
+
+.import-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px; }
+.import-modal-overlay.active { display: flex; }
+.import-modal { background: #fff; border-radius: 18px; width: 100%; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+.import-modal-hdr { background: linear-gradient(135deg, #2e7d32, #388e3c); padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
+.import-modal-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: #fff; }
+.import-modal-sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+.import-modal-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.import-modal-body { padding: 18px 20px; }
+.import-textarea { width: 100%; height: 140px; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 12px; font-size: 12px; font-family: monospace; resize: vertical; outline: none; margin-bottom: 12px; }
+.import-textarea:focus { border-color: #2e7d32; }
+.import-method-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.imp-tab { flex: 1; padding: 8px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; color: #888; background: #fff; text-align: center; }
+.imp-tab.active { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.imp-panel { display: none; }
+.imp-panel.active { display: block; }
+.import-file-zone { border: 2px dashed #c8e6c9; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; margin-bottom: 12px; position: relative; }
+.import-file-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.import-file-zone-icon { font-size: 28px; margin-bottom: 6px; }
+.import-file-zone-text { font-size: 13px; color: #555; }
+.btn-do-import { width: 100%; padding: 12px; background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.import-result { font-size: 12px; margin-top: 10px; padding: 8px 12px; border-radius: 8px; display: none; }
+.import-result.ok  { background: #e8f5e9; color: #2e7d32; display: block; }
+.import-result.err { background: #ffebee; color: #c62828; display: block; }
+
+/* live sync indicator */
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; display: inline-block; margin-right: 4px; }
+.sync-dot.live { background: #00c853; animation: blink 1.5s infinite; }
+.sync-status { font-size: 11px; color: #888; display: flex; align-items: center; gap: 6px; }
+
+.live-alert {
+  position: fixed; top: 70px; right: 16px; z-index: 500;
+  background: linear-gradient(135deg, #1565c0, #1976d2);
+  color: #fff; border-radius: 12px; padding: 10px 16px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(21,101,192,0.4);
+  display: none; align-items: center; gap: 8px;
+  animation: slideRight 0.3s ease;
+}
+@keyframes slideRight { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
+.firebase-badge {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+}
+.firebase-badge.connected { color: #69f0ae; }
+.firebase-badge.offline    { color: #aaa; }
+.fb-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.fb-dot.on  { background: #69f0ae; animation: blink 1.2s infinite; }
+.fb-dot.off { background: #aaa; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🌿</div>
+    <div class="login-title">Doctor Dashboard</div>
+    <div class="login-sub">Swasthya Sankul Wellness Centre<br>Dr. Kunal Jain (Biltiwala)</div>
+    <label class="login-label">Enter Access Password</label>
+    <div class="login-error" id="loginError">&nbsp;</div>
+    <input class="login-input" id="loginPwd" type="password" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter') doLogin()"/>
+    <button class="btn-login" onclick="doLogin()">🔓 Access Dashboard</button>
+    <div class="login-hint">Authorized personnel only</div>
+  </div>
+</div>
+
+<!-- ═══ MAIN DASHBOARD ═══ -->
+<div class="dashboard" id="dashboard">
+
+  <div class="dash-header">
+    <div class="dh-left">
+      <div class="dh-logo">🌿</div>
+      <div>
+        <div class="dh-title">Patient Dashboard</div>
+        <div class="dh-sub">Swasthya Sankul · Dr. Kunal Jain</div>
+      </div>
+    </div>
+    <div class="dh-right">
+      <div class="firebase-badge" id="fbBadge" style="margin-right:4px">
+          <div class="fb-dot off" id="fbDot"></div>
+          <span id="fbStatus">Checking...</span>
+        </div>
+        <div class="live-badge"><div class="live-dot"></div><div class="live-text">LIVE</div></div>
+      <button class="btn-hdr btn-refresh" onclick="loadDashboard()">🔄 Refresh</button>
+      <button class="btn-hdr btn-export-hdr" onclick="exportCSV()">⬇️ Export CSV</button>
+      <button class="btn-hdr btn-logout" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <!-- Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" id="tab-patients" onclick="switchTab('patients')">👥 Patients</button>
+      <button class="tab-btn" id="tab-subs" onclick="switchTab('subs')">💳 Subscriptions & Payments</button>
+    </div>
+
+    <!-- TAB: PATIENTS -->
+    <div class="tab-panel active" id="panel-patients">
+
+    <!-- DATA BRIDGE BANNER -->
+    <div class="bridge-banner" id="bridgeBanner">
+      <div class="bridge-icon">🔗</div>
+      <div style="flex:1">
+        <div class="bridge-title">Manual Import (Fallback — only if Firebase not set up)</div>
+        <div class="bridge-sub">
+          If patients use the tool on a <strong>different device</strong> than this one, import their data here.
+          Once imported, all records are saved permanently on this device.
+        </div>
+        <div class="bridge-btns">
+          <button class="bridge-btn bridge-paste" onclick="openImportModal('paste')">
+            📋 Paste / Import Data
+          </button>
+          <button class="bridge-btn bridge-import" onclick="openImportModal('file')">
+            📂 Import from File
+          </button>
+        </div>
+        <div class="bridge-howto" style="margin-top:10px">
+          <strong>How?</strong> In the Patient tool → tap the menu → <em>Export Data for Doctor</em> → share the file or code with you.
+          Then paste or upload it here.
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncStatus">Checking data...</span></div>
+        <button onclick="loadDashboard()" style="background:none;border:none;color:#1565c0;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Refresh</button>
+        <button onclick="testFirebase()" style="background:#e3f2fd;border:1px solid #90caf9;color:#1565c0;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border-radius:6px;padding:4px 10px;">🔥 Test Firebase</button>
+      </div>
+      <div class="stats-row" id="statsRow"></div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">🩺 Top Symptoms</div>
+        <div class="bar-chart" id="symChart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🥗 Diet Distribution</div>
+        <div class="diet-chart" id="dietChart"></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <span class="filter-label">Filter:</span>
+      <input class="filter-input" id="searchInp" type="text" placeholder="🔍 Search name or symptom..." oninput="applyFilters()"/>
+      <select class="filter-sel" id="symFilter" onchange="applyFilters()">
+        <option value="">All Symptoms</option>
+      </select>
+      <select class="filter-sel" id="dietFilter" onchange="applyFilters()">
+        <option value="">All Diets</option>
+        <option>Vegetarian</option>
+        <option>Non-Vegetarian</option>
+        <option>Vegan</option>
+      </select>
+      <select class="filter-sel" id="dateFilter" onchange="applyFilters()">
+        <option value="">All Time</option>
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+      </select>
+      <button class="btn-filter btn-csv" onclick="exportCSV()">⬇️ CSV</button>
+      <button class="btn-filter btn-clr" onclick="clearData()">🗑️ Clear All</button>
+      <span class="results-count" id="resultsCount"></span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="pt" id="patientTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Patient</th>
+              <th>Age / Gender</th>
+              <th>Symptoms</th>
+              <th>Diet</th>
+              <th>Follow-up Details</th>
+              <th>📎 Documents</th>
+              <th>Date &amp; Time</th>
+              <th>Phone</th>
+              <th>View</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">No patient records yet</div>
+        <div class="empty-sub">Records appear here automatically when patients generate diet plans using the Patient Diet Advisor tool.</div>
+      </div>
+    </div>
+
+    </div><!-- /panel-patients -->
+
+    <!-- TAB: SUBSCRIPTIONS -->
+    <div class="tab-panel" id="panel-subs">
+
+      <!-- Revenue stats -->
+      <div class="rev-stats" id="revStats"></div>
+
+      <!-- Grant subscription form (doctor can manually grant) -->
+      <div class="grant-form">
+        <div class="grant-form-title">➕ Manually Grant Subscription (for cash/UPI payments verified by you)</div>
+        <div class="grant-row">
+          <input class="grant-inp" id="grantPhone" type="tel" placeholder="Patient phone (10 digits)" style="max-width:160px"/>
+          <input class="grant-inp" id="grantName" type="text" placeholder="Patient name"/>
+          <input class="grant-inp" id="grantTxn" type="text" placeholder="Transaction ID or CASH"/>
+          <select class="grant-inp" id="grantDays" style="max-width:130px">
+            <option value="30">30 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
+          <button class="btn-grant-submit" onclick="manualGrantSub()">✅ Grant Access</button>
+        </div>
+      </div>
+
+      <!-- Subscriptions table -->
+      <div class="sub-card">
+        <div class="sub-card-header">
+          <div>
+            <div class="sub-card-title">💳 All Subscription Records</div>
+            <div class="sub-card-sub">Auto-updated when patients pay via PayTM QR</div>
+          </div>
+          <div class="sub-revenue-badge">
+            <div class="sub-rev-num" id="totalRevenue">₹0</div>
+            <div class="sub-rev-label">Total Revenue</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="st" id="subTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Patient Name</th>
+                <th>Amount</th>
+                <th>Transaction ID</th>
+                <th>Start Date</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="subTableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="subEmptyState" style="display:none">
+          <div class="empty-icon">💳</div>
+          <div class="empty-title">No subscriptions yet</div>
+          <div class="empty-sub">Subscription records appear here when patients make payments and enter their Transaction IDs.</div>
+        </div>
+      </div>
+
+    </div><!-- /panel-subs -->
+
+  </div><!-- /dash-body -->
+</div><!-- /dashboard -->
+
+<!-- ═══ PATIENT DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" id="modalName">Patient Name</div>
+        <div class="modal-meta" id="modalMeta"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+
+// ═══════════════════════════════════════════════════════════
+//  FIREBASE REALTIME DATABASE — DOCTOR DASHBOARD SYNC
+// ═══════════════════════════════════════════════════════════
+const FIREBASE_DB_URL = 'https://swasthyanutrition-ebd42-default-rtdb.asia-southeast1.firebasedatabase.app'; // ← same URL as patient file
+const FIREBASE_ON    = true; // Firebase configured
+
+const FB = {
+  async get(path) {
+    if (!FIREBASE_ON) return null;
+    try {
+      const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`);
+      return res.ok ? await res.json() : null;
+    } catch(e) { return null; }
+  },
+  async set(path, data) {
+    if (!FIREBASE_ON) return null;
+    try {
+      const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      return res.ok ? await res.json() : null;
+    } catch(e) { return null; }
+  },
+  // Long-poll for real-time updates using Firebase SSE
+  listen(path, callback) {
+    if (!FIREBASE_ON) return;
+    const url = `${FIREBASE_DB_URL}/${path}.json`;
+    // Use SSE (Server-Sent Events) — Firebase supports this natively
+    const es = new EventSource(url);
+    es.addEventListener('put', e => {
+      try { callback(JSON.parse(e.data)); } catch(err) {}
+    });
+    es.onerror = () => {
+      es.close();
+      // Reconnect after 5 seconds
+      setTimeout(() => FB.listen(path, callback), 5000);
+    };
+    return es;
+  }
+};
+
+// Load all patients from Firebase
+async function loadFromFirebase() {
+  if (!FIREBASE_ON) return [];
+  try {
+    const data = await FB.get('patients');
+    if (!data || typeof data !== 'object') return [];
+    return Object.values(data)
+      .filter(r => r && r.timestamp)
+      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  } catch(e) {
+    console.warn('loadFromFirebase error:', e);
+    return [];
+  }
+}
+
+// Load all subscriptions from Firebase
+async function loadSubsFromFirebase() {
+  if (!FIREBASE_ON) return {};
+  return await FB.get('subscriptions') || {};
+}
+
+// Save subscription from doctor dashboard to Firebase
+async function saveSubFirebase(phone, subData) {
+  if (!FIREBASE_ON) return;
+  await FB.set(`subscriptions/${phone}`, subData);
+}
+
+// Real-time listener — auto refresh dashboard when new patient added
+let fbListener = null;
+
+const STORAGE_KEY = 'swasthya_patients';
+const PASSWORD    = 'Kunal@1234';
+
+let allRecords  = [];
+let filteredRec = [];
+
+// ── LOGIN ──
+async function doLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd === PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    await loadDashboard();
+    // Auto-refresh every 10 seconds
+    if (window._dashInterval) clearInterval(window._dashInterval);
+    window._dashInterval = setInterval(async () => { await loadDashboard(); }, 10000);
+    // Also start Firebase real-time listener
+    startFirebaseListener();
+  } else {
+    document.getElementById('loginError').textContent = '❌ Incorrect password. Please try again.';
+    document.getElementById('loginPwd').value = '';
+    document.getElementById('loginPwd').focus();
+    setTimeout(() => document.getElementById('loginError').textContent = '\u00a0', 3000);
+  }
+}
+
+function logout() {
+  if (confirm('Logout from dashboard?')) {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginPwd').value = '';
+  }
+}
+
+// ── LOAD DATA ──
+async function loadDashboard() {
+  // Step 1: Load from Firebase (works across all devices)
+  if (FIREBASE_ON) {
+    try {
+      const fbRecords = await loadFromFirebase();
+      if (fbRecords && fbRecords.length > 0) {
+        allRecords = fbRecords;
+        // Cache in localStorage for offline fallback
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(allRecords)); } catch(e) {}
+      } else {
+        // Firebase empty or failed — try localStorage cache
+        try { allRecords = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { allRecords = []; }
+      }
+    } catch(e) {
+      // Firebase failed — use localStorage
+      try { allRecords = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e2) { allRecords = []; }
+    }
+  } else {
+    // No Firebase — use localStorage only
+    try { allRecords = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { allRecords = []; }
+  }
+
+  // Step 2: Render everything with loaded data
+  renderStats();
+  renderCharts();
+  populateFilters();
+  applyFilters();
+  updateSyncStatus();
+
+  // Step 3: Load subscriptions if on that tab
+  if (document.getElementById('panel-subs') &&
+      document.getElementById('panel-subs').classList.contains('active')) {
+    loadSubscriptions();
+  }
+}
+
+function updateStorageDebug() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const el1 = document.getElementById('dbgPatients');
+  const el2 = document.getElementById('dbgRaw');
+  if (!el1) return;
+  if (!raw) {
+    el1.textContent = '❌ NO DATA in swasthya_patients — localStorage is empty on this browser';
+    el2.textContent = 'Solution: Use SAME browser that patient used. Or set up Firebase.';
+    return;
+  }
+  try {
+    const records = JSON.parse(raw);
+    el1.textContent = '✅ Found ' + records.length + ' patient record(s) in localStorage';
+    if (records.length > 0) {
+      el2.textContent = 'Latest: ' + (records[0].name||'?') + ' | ' + (records[0].phone||'?') + ' | ' + new Date(records[0].timestamp).toLocaleString('en-IN');
+    }
+  } catch(e) {
+    el1.textContent = '⚠️ Data found but could not parse: ' + e.message;
+  }
+}
+
+function renderStats() {
+  const r = allRecords;
+  const today = new Date().toDateString();
+  const todayCount = r.filter(p => new Date(p.timestamp).toDateString() === today).length;
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const weekCount = r.filter(p => new Date(p.timestamp) >= weekAgo).length;
+  const withFollowUp = r.filter(p => p.followUpAnswers && Object.keys(p.followUpAnswers).length > 0).length;
+
+  // Top symptom
+  const sympCounts = {};
+  r.forEach(p => (p.symptoms||[]).forEach(s => { sympCounts[s]=(sympCounts[s]||0)+1; }));
+  const topSym = Object.entries(sympCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon green">👥</div>
+      <div><div class="stat-num">${r.length}</div><div class="stat-label">Total Patients</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">📅</div>
+      <div><div class="stat-num">${todayCount}</div><div class="stat-label">Today</div><div class="stat-delta">↑ ${weekCount} this week</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">🩺</div>
+      <div><div class="stat-num">${withFollowUp}</div><div class="stat-label">With Clinical Details</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">📊</div>
+      <div><div class="stat-num">${topSym ? topSym[0].split(' ')[0] : '—'}</div><div class="stat-label">Top Symptom ${topSym?'('+topSym[1]+')':''}</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">🥗</div>
+      <div><div class="stat-num">${r.filter(p=>p.diet&&p.diet.includes('Non')).length}</div><div class="stat-label">Non-Veg Patients</div></div>
+    </div>`;
+}
+
+function renderCharts() {
+  const r = allRecords;
+
+  // Symptom bar chart
+  const sympCounts = {};
+  r.forEach(p => (p.symptoms||[]).forEach(s => { sympCounts[s]=(sympCounts[s]||0)+1; }));
+  const topSyms = Object.entries(sympCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxCount = topSyms.length ? topSyms[0][1] : 1;
+  const colors = ['green','blue','orange','purple','green','blue','orange','purple'];
+
+  document.getElementById('symChart').innerHTML = topSyms.length ? topSyms.map(([s,c],i) =>
+    `<div class="bar-row">
+      <div class="bar-label" title="${s}">${s}</div>
+      <div class="bar-track"><div class="bar-fill ${colors[i%colors.length]}" style="width:${Math.round((c/maxCount)*100)}%">${c}</div></div>
+      <div class="bar-count">${c}</div>
+    </div>`).join('')
+    : '<div style="color:#aaa;font-size:13px;padding:10px">No data yet</div>';
+
+  // Diet donut-style
+  const veg = r.filter(p=>p.diet&&p.diet.includes('Vegetarian')&&!p.diet.includes('Non')).length;
+  const nonveg = r.filter(p=>p.diet&&p.diet.includes('Non')).length;
+  const vegan = r.filter(p=>p.diet&&p.diet.includes('Vegan')).length;
+  const total = r.length || 1;
+  const dietItems = [
+    {label:'🥦 Vegetarian', count:veg, pct:Math.round(veg/total*100), color:'#2e7d32'},
+    {label:'🍗 Non-Vegetarian', count:nonveg, pct:Math.round(nonveg/total*100), color:'#e65100'},
+    {label:'🌱 Vegan', count:vegan, pct:Math.round(vegan/total*100), color:'#6a1b9a'},
+  ];
+
+  // SVG donut
+  const segments = [];
+  let offset = 0;
+  const cx=60,cy=60,r2=45,stroke=28;
+  const circ = 2*Math.PI*r2;
+  dietItems.forEach(item => {
+    const dashLen = (item.count/total)*circ;
+    segments.push(`<circle cx="${cx}" cy="${cy}" r="${r2}" fill="none" stroke="${item.color}" stroke-width="${stroke}" stroke-dasharray="${dashLen} ${circ}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" opacity="0.85"/>`);
+    offset += dashLen;
+  });
+
+  document.getElementById('dietChart').innerHTML = `
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      ${r.length ? segments.join('') : '<circle cx="60" cy="60" r="45" fill="none" stroke="#eee" stroke-width="28"/>'}
+      <text x="60" y="64" text-anchor="middle" font-family="DM Sans" font-size="18" font-weight="800" fill="#333">${r.length}</text>
+    </svg>
+    <div class="diet-legend">
+      ${dietItems.map(d=>`<div class="diet-item"><div class="diet-dot" style="background:${d.color}"></div><div class="diet-name">${d.label}</div><div class="diet-pct">${d.count} <span style="color:#aaa;font-size:11px">(${d.pct}%)</span></div></div>`).join('')}
+    </div>`;
+}
+
+function populateFilters() {
+  const allSyms = [...new Set(allRecords.flatMap(r=>(r.symptoms||[])))].sort();
+  const sel = document.getElementById('symFilter');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">All Symptoms</option>' + allSyms.map(s=>`<option ${s===prev?'selected':''}>${s}</option>`).join('');
+}
+
+// ── FILTERS ──
+function applyFilters() {
+  const search  = (document.getElementById('searchInp').value||'').toLowerCase();
+  const sym     = document.getElementById('symFilter').value;
+  const diet    = document.getElementById('dietFilter').value;
+  const dateF   = document.getElementById('dateFilter').value;
+  const now     = new Date();
+  const todayStr= now.toDateString();
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const monthAgo= new Date(); monthAgo.setMonth(monthAgo.getMonth()-1);
+
+  filteredRec = allRecords.filter(r => {
+    if (search && !r.name.toLowerCase().includes(search) && !(r.symptoms||[]).join(' ').toLowerCase().includes(search)) return false;
+    if (sym && !(r.symptoms||[]).includes(sym)) return false;
+    if (diet && !(r.diet||'').includes(diet)) return false;
+    if (dateF) {
+      const d = new Date(r.timestamp);
+      if (dateF==='today' && d.toDateString()!==todayStr) return false;
+      if (dateF==='week'  && d < weekAgo) return false;
+      if (dateF==='month' && d < monthAgo) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('resultsCount').textContent = `Showing ${filteredRec.length} of ${allRecords.length} records`;
+  renderTable();
+}
+
+// ── TABLE ──
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  const table = document.getElementById('patientTable');
+
+  if (filteredRec.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    table.style.display = allRecords.length ? 'table' : 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  tbody.innerHTML = filteredRec.map((p, i) => {
+    const dt  = new Date(p.timestamp);
+    const date= dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const time= dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const syms= (p.symptoms||[]);
+    const symHTML = syms.slice(0,3).map(s=>`<span class="sym-tag">${s}</span>`).join('')
+                  + (syms.length>3?`<span class="sym-tag more">+${syms.length-3} more</span>`:'');
+    const dietCls = p.diet&&p.diet.includes('Non')?'diet-nonveg':p.diet&&p.diet.includes('Vegan')?'diet-vegan':'diet-veg';
+    const hasFQ   = p.followUpAnswers && Object.keys(p.followUpAnswers).length > 0;
+    const uploads = p.uploads || [];
+    const rxCount  = uploads.filter(u=>u.type==='rx').length;
+    const rptCount = uploads.filter(u=>u.type==='rpt').length;
+    const cloudCount = uploads.filter(u=>u.cloudUrl).length;
+    const uploadHTML = uploads.length > 0
+      ? `<span class="upload-badge has">📎 ${rxCount>0?rxCount+'💊':''} ${rptCount>0?rptCount+'🧪':''} ${cloudCount>0?'☁️':'📱'}</span>`
+      : '<span class="upload-badge none">—</span>';
+    const realIdx = allRecords.findIndex(r=>r===filteredRec[i]);
+    return `<tr>
+      <td style="color:#aaa;font-size:12px">${allRecords.length - realIdx}</td>
+      <td><div class="pt-name">${escHtml(p.name||'Unknown')}</div></td>
+      <td><div class="pt-meta">${p.age||'—'} yrs / ${p.gender||'—'}</div></td>
+      <td>${symHTML}</td>
+      <td><span class="diet-badge ${dietCls}">${p.diet||'—'}</span></td>
+      <td><span class="followup-badge ${hasFQ?'fq-yes':'fq-no'}">${hasFQ?'✅ Yes':'—'}</span></td>
+      <td>${uploadHTML}</td>
+      <td><div class="pt-date">${date}</div><div class="pt-time">${time}</div></td>
+      <td style="font-size:12px">${p.phone?'+91 '+p.phone:'—'}</td>
+      <td><button class="btn-view" onclick="viewDetail(${realIdx})">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── DETAIL MODAL ──
+function viewDetail(idx) {
+  const p = allRecords[idx];
+  if (!p) return;
+  const dt = new Date(p.timestamp);
+
+  document.getElementById('modalName').textContent = p.name || 'Unknown Patient';
+  document.getElementById('modalMeta').textContent =
+    `${p.age||'—'} yrs · ${p.gender||'—'} · ${p.diet||'—'} · ${dt.toLocaleString('en-IN')}`;
+
+  let body = '';
+
+  // Basic info
+  body += `<div class="modal-section">
+    <div class="modal-section-title">Basic Information</div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Name</div><div class="detail-value">${escHtml(p.name||'—')}</div></div>
+      <div class="detail-item"><div class="detail-label">Age</div><div class="detail-value">${p.age||'—'} years</div></div>
+      <div class="detail-item"><div class="detail-label">Gender</div><div class="detail-value">${p.gender||'—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Phone</div><div class="detail-value">${p.phone?'+91 '+p.phone:'—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Diet Preference</div><div class="detail-value">${p.diet||'—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Generated On</div><div class="detail-value">${dt.toLocaleString('en-IN')}</div></div>
+    </div>
+  </div>`;
+
+  // Symptoms
+  const syms = p.symptoms||[];
+  body += `<div class="modal-section">
+    <div class="modal-section-title">Reported Symptoms (${syms.length})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${syms.map(s=>`<span class="sym-tag" style="font-size:12px;padding:4px 10px">${s}</span>`).join('')||'—'}</div>
+  </div>`;
+
+  // Follow-up details
+  if (p.followUpAnswers && Object.keys(p.followUpAnswers).length > 0) {
+    body += `<div class="modal-section">
+      <div class="modal-section-title">🩺 Clinical Details</div>`;
+    Object.entries(p.followUpAnswers).forEach(([sym, answers]) => {
+      body += `<div class="fq-block">
+        <div class="fq-symptom">${sym}</div>
+        ${Object.entries(answers).map(([q,a])=>`
+          <div class="fq-item">
+            <div class="fq-q">${q}</div>
+            <div class="fq-a">${escHtml(String(a))}</div>
+          </div>`).join('')}
+      </div>`;
+    });
+    body += `</div>`;
+  } else {
+    body += `<div class="modal-section">
+      <div class="modal-section-title">Clinical Details</div>
+      <div style="color:#aaa;font-size:13px;padding:8px 0">No follow-up details recorded for this patient.</div>
+    </div>`;
+  }
+
+  // Uploaded documents section
+  const uploads = p.uploads || [];
+  if (uploads.length > 0) {
+    const rxFiles  = uploads.filter(u=>u.type==='rx');
+    const rptFiles = uploads.filter(u=>u.type==='rpt');
+    body += `<div class="modal-section">
+      <div class="modal-section-title">📎 Uploaded Documents (${uploads.length})</div>
+      <div class="upload-detail-grid">`;
+    uploads.forEach(u => {
+      const sizStr = u.size > 1024*1024
+        ? (u.size/(1024*1024)).toFixed(1)+' MB'
+        : Math.round(u.size/1024)+' KB';
+      const icon = u.type==='rx' ? '💊' : (u.fileType==='application/pdf' ? '📄' : '🧪');
+      const label = u.type==='rx' ? 'Prescription' : 'Lab Report';
+      const isImage = u.fileType && u.fileType.startsWith('image/');
+      const cloudSection = u.cloudUrl
+        ? (isImage
+            ? `<div style="margin-top:6px"><a href="${u.cloudUrl}" target="_blank"><img src="${u.cloudUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;border:1px solid #90caf9"/></a><br><a href="${u.cloudUrl}" target="_blank" style="font-size:10px;color:#1565c0;font-weight:700">🔗 Open full image</a></div>`
+            : `<div style="margin-top:6px"><a href="${u.cloudUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#e3f2fd;color:#1565c0;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none">📄 Open ${escHtml(u.name)}</a></div>`)
+        : `<div style="font-size:10px;color:#aaa;margin-top:4px">📱 File on patient's device — not yet in cloud</div>`;
+      body += `<div class="upload-file-item" style="flex-direction:column;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:8px;width:100%">
+          <span class="upload-file-icon">${icon}</span>
+          <div style="flex:1">
+            <div class="upload-file-name">${escHtml(u.name)}</div>
+            <div class="upload-file-meta">${label} · ${sizStr} ${u.cloudUrl ? '· <span style=\"color:#2e7d32;font-weight:700\">☁️ In Cloud</span>' : '· <span style=\"color:#888\">📱 Local only</span>'}</div>
+          </div>
+        </div>
+        ${cloudSection}
+      </div>`;
+    });
+    body += `</div>`;
+    const hasCloud = uploads.some(u=>u.cloudUrl);
+    const hasLocal = uploads.some(u=>!u.cloudUrl);
+    body += `<div style="font-size:11px;margin-top:8px;padding:8px 10px;background:${hasCloud?'#e8f5e9':'#fff8e1'};border-radius:8px;color:${hasCloud?'#2e7d32':'#795548'}">
+      ${hasCloud ? '✅ Cloud links above open directly in your browser.' : ''}
+      ${hasLocal ? '💡 Some files are on patient\u2019s device — ask them to share or upload next time.' : ''}
+    </div></div>`;
+  }
+
+
+  // ── FULL DIET PLAN ──
+  if (p.plan && p.plan.days && p.plan.days.length > 0) {
+    const mealNames  = ['Breakfast','Lunch','Dinner'];
+    const mealEmojis = ['🌅','🌞','🌙'];
+
+    body += `<div class="modal-section">
+      <div class="modal-section-title">🍽️ Full Diet Plan (3 Days)</div>`;
+
+    // Avoid foods
+    if (p.plan.avoid && p.plan.avoid.length > 0) {
+      body += `<div style="background:#fff5f5;border:1px solid #ffcdd2;border-radius:10px;padding:10px 14px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:#c62828;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Foods to Avoid</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${(p.plan.avoid||[]).map(a=>`<span style="background:#ffebee;color:#c62828;border-radius:20px;padding:3px 10px;font-size:12px">${a}</span>`).join('')}</div>
+      </div>`;
+    }
+
+    // Remedy
+    if (p.plan.remedy) {
+      body += `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#795548">
+        <strong>Ayurvedic Remedy:</strong> ${escHtml(p.plan.remedy)}
+      </div>`;
+    }
+
+    // Day cards
+    p.plan.days.forEach((day, di) => {
+      if (!day) return;
+      const d = new Date(p.timestamp); d.setDate(d.getDate()+di);
+      const ds = d.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short'});
+      const dayColors = ['#e8f5e9','#e3f2fd','#f3e5f5'];
+      const hdrColors = ['#2e7d32','#1565c0','#6a1b9a'];
+      body += `<div style="border:1.5px solid #e0e0e0;border-radius:12px;overflow:hidden;margin-bottom:12px">
+        <div style="background:${hdrColors[di]};color:#fff;padding:9px 14px;font-weight:700;font-size:13px">
+          Day ${di+1} — ${ds}
+        </div>`;
+      (day||[]).forEach((meal, mi) => {
+        if (!meal) return;
+        body += `<div style="background:${di===0?'#f9fff9':di===1?'#f0f7ff':'#fdf0ff'};padding:10px 14px;border-bottom:1px solid #f0f0f0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;color:${hdrColors[di]};text-transform:uppercase;letter-spacing:0.5px">${mealEmojis[mi]} ${mealNames[mi]}</span>
+            <span style="font-size:10px;color:#888">🔥 ${meal.cal||0} kcal &nbsp; 💪 ${meal.prot||0}g</span>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#1a2e1a;margin-bottom:2px">${escHtml(meal.food||'')}</div>
+          <div style="font-size:11px;color:#2e7d32;margin-bottom:2px">Qty: ${escHtml(meal.qty||'')}</div>
+          <div style="font-size:11px;color:#666;font-style:italic">${escHtml(meal.why||'')}</div>
+        </div>`;
+      });
+      body += `</div>`;
+    });
+
+    // Exercise plan
+    if (p.plan.exercises && p.plan.exercises.length > 0) {
+      body += `<div style="background:#e3f2fd;border:1.5px solid #90caf9;border-radius:10px;padding:12px 14px;margin-top:8px">
+        <div style="font-size:11px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">
+          Exercise Plan — Target: ${p.plan.burnTarget||300} kcal/day
+        </div>`;
+      p.plan.exercises.forEach(ex => {
+        body += `<div style="background:#fff;border-radius:8px;padding:8px 12px;margin-bottom:6px">
+          <div style="font-size:13px;font-weight:700;color:#1565c0">${escHtml(ex.name||'')}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">
+            ${ex.duration?'Duration: '+ex.duration+'&nbsp;&nbsp;':''}
+            ${ex.calBurn?'Burns: '+ex.calBurn:''}
+          </div>
+        </div>`;
+      });
+      body += `</div>`;
+    }
+
+    // Daily totals
+    body += `<div style="display:flex;gap:10px;margin-top:10px">
+      <div style="flex:1;background:#e8f5e9;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:#2e7d32">${p.plan.avgCal||'--'}</div>
+        <div style="font-size:10px;color:#888">Avg Daily Calories</div>
+      </div>
+      <div style="flex:1;background:#e3f2fd;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:#1565c0">${p.plan.avgProt||'--'}g</div>
+        <div style="font-size:10px;color:#888">Avg Daily Protein</div>
+      </div>
+      <div style="flex:1;background:#fff3e0;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:#e65100">${p.plan.burnTarget||'--'}</div>
+        <div style="font-size:10px;color:#888">Calories to Burn</div>
+      </div>
+    </div>
+
+    </div>`;
+  } else {
+    body += `<div class="modal-section">
+      <div class="modal-section-title">Diet Plan</div>
+      <div style="color:#aaa;font-size:13px;padding:8px 0">Plan data not available for this record. New plans generated after this update will show full diet details.</div>
+    </div>`;
+  }
+
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── EXPORT CSV ──
+function exportCSV() {
+  const records = filteredRec.length > 0 ? filteredRec : allRecords;
+  if (!records.length) { alert('No records to export.'); return; }
+  const headers = ['#','Name','Age','Gender','Diet','Symptoms','Phone','Date','Time','Follow-up Details'];
+  const rows = records.map((p,i) => {
+    const dt = new Date(p.timestamp);
+    const fuStr = p.followUpAnswers
+      ? Object.entries(p.followUpAnswers).map(([s,a])=>s+': '+Object.entries(a).map(([q,v])=>q+'='+v).join('; ')).join(' | ')
+      : '';
+    return [
+      allRecords.length-i,
+      p.name||'', p.age||'', p.gender||'', p.diet||'',
+      (p.symptoms||[]).join('; '), p.phone||'',
+      dt.toLocaleDateString('en-IN'), dt.toLocaleTimeString('en-IN'),
+      fuStr
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv = [headers.join(','),...rows].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `Swasthya_Patients_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── CLEAR DATA ──
+function clearData() {
+  if (confirm('⚠️ Delete ALL patient records permanently?\n\nThis cannot be undone.')) {
+    localStorage.removeItem(STORAGE_KEY);
+    allRecords = []; filteredRec = [];
+    loadDashboard();
+  }
+}
+
+// Auto-focus password on load
+window.addEventListener('load', () => {
+  document.getElementById('loginPwd').focus();
+});
+
+// ═══════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  ['patients','subs'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab === 'subs') loadSubscriptions();
+}
+
+// ═══════════════════════════════════════════
+//  SUBSCRIPTION MANAGEMENT
+// ═══════════════════════════════════════════
+const SUB_KEY  = 'swasthya_subscriptions';
+const SUB_PRICE = 149;
+
+function loadSubscriptions() {
+  let subs = {};
+  // Read from localStorage first (instant)
+  try { subs = JSON.parse(localStorage.getItem(SUB_KEY) || '{}'); } catch(e) {}
+  // Also try Firebase async if configured
+  if (FIREBASE_ON) {
+    loadSubsFromFirebase().then(fbSubs => {
+      if (fbSubs && Object.keys(fbSubs).length > 0) {
+        subs = fbSubs;
+        try { localStorage.setItem(SUB_KEY, JSON.stringify(subs)); } catch(e) {}
+      }
+    }).catch(() => {});
+  }
+
+  const entries = Object.entries(subs).sort((a,b) => new Date(b[1].startDate) - new Date(a[1].startDate));
+  const now = new Date();
+
+  // Revenue stats
+  const activeCount = entries.filter(([,s]) => new Date(s.expiry) > now).length;
+  const totalRev = entries.reduce((sum,[,s]) => sum + (s.amount||SUB_PRICE), 0);
+  const thisMonthRev = entries.filter(([,s]) => {
+    const d = new Date(s.startDate);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).reduce((sum,[,s]) => sum + (s.amount||SUB_PRICE), 0);
+
+  document.getElementById('revStats').innerHTML = `
+    <div class="rev-stat"><div class="rev-stat-num">₹${totalRev}</div><div class="rev-stat-label">Total Revenue</div></div>
+    <div class="rev-stat"><div class="rev-stat-num">${activeCount}</div><div class="rev-stat-label">Active Subscribers</div></div>
+    <div class="rev-stat"><div class="rev-stat-num">₹${thisMonthRev}</div><div class="rev-stat-label">This Month</div></div>`;
+
+  document.getElementById('totalRevenue').textContent = '₹' + totalRev;
+
+  if (entries.length === 0) {
+    document.getElementById('subEmptyState').style.display = 'block';
+    document.getElementById('subTable').style.display = 'none';
+    return;
+  }
+  document.getElementById('subEmptyState').style.display = 'none';
+  document.getElementById('subTable').style.display = 'table';
+
+  const tbody = document.getElementById('subTableBody');
+  tbody.innerHTML = entries.map(([key, s], i) => {
+    const isActive = new Date(s.expiry) > now;
+    const expDate  = new Date(s.expiry).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const startDate= new Date(s.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const daysLeft = Math.max(0, Math.ceil((new Date(s.expiry)-now)/(1000*60*60*24)));
+    const statusHTML = isActive
+      ? `<span class="sub-status-active"><span class="sub-status-dot green"></span>Active · ${daysLeft}d left</span>`
+      : `<span class="sub-status-expired"><span class="sub-status-dot red"></span>Expired</span>`;
+    const phoneKey = s.phone ? '+91 '+s.phone : (key.length===10 ? '+91 '+key : '');
+    return `<tr>
+      <td style="color:#aaa;font-size:12px">${i+1}</td>
+      <td><strong>${escHtml(s.name||key)}</strong><br><span style="font-size:10px;color:#888">${phoneKey}</span></td>
+      <td style="font-weight:700;color:#2e7d32">₹${s.amount||SUB_PRICE}</td>
+      <td><span class="txn-code">${escHtml(s.txnId||'MANUAL')}</span></td>
+      <td>${startDate}</td>
+      <td>${expDate}</td>
+      <td>${statusHTML}</td>
+      <td>
+        ${isActive
+          ? `<button class="btn-revoke" onclick="revokeSub('${key}')">Revoke</button>`
+          : `<button class="btn-grant" onclick="renewSub('${key}','${escHtml(s.name||key)}')">Renew</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function revokeSub(key) {
+  if (!confirm('Revoke subscription for ' + key + '? They will lose access immediately.')) return;
+  try {
+    const subs = JSON.parse(localStorage.getItem(SUB_KEY)||'{}');
+    if (subs[key]) {
+      subs[key].expiry = new Date().toISOString();
+      localStorage.setItem(SUB_KEY, JSON.stringify(subs));
+      saveSubFirebase(key, subs[key]);
+    }
+  } catch(e) {}
+  loadSubscriptions();
+}
+
+function renewSub(key, name) {
+  try {
+    const subs = JSON.parse(localStorage.getItem(SUB_KEY)||'{}');
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate()+30);
+    subs[key] = { ...subs[key], name, expiry:expiry.toISOString(), startDate:new Date().toISOString(), txnId:'RENEWED-DOCTOR', amount:SUB_PRICE };
+    localStorage.setItem(SUB_KEY, JSON.stringify(subs));
+    // Sync renewal to Firebase
+    saveSubFirebase(key, subs[key]);
+  } catch(e) {}
+  loadSubscriptions();
+}
+
+function manualGrantSub() {
+  const name  = document.getElementById('grantName').value.trim();
+  const phone = document.getElementById('grantTxn').value.trim().replace(/\D/g,'');
+  const txn   = document.getElementById('grantTxn').value.trim().toUpperCase() || 'MANUAL';
+  const days  = parseInt(document.getElementById('grantDays').value) || 30;
+  const grantPhone = document.getElementById('grantPhone') ? document.getElementById('grantPhone').value.trim().replace(/\D/g,'') : '';
+  const key   = grantPhone || phone || name.toLowerCase().trim();
+  if (!key) { alert('Please enter patient phone number or name'); return; }
+  try {
+    const subs   = JSON.parse(localStorage.getItem(SUB_KEY)||'{}');
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate()+days);
+    subs[key] = { phone:key, name, txnId:txn, amount:SUB_PRICE, startDate:new Date().toISOString(), expiry:expiry.toISOString(), activatedOn:new Date().toLocaleString('en-IN'), grantedByDoctor:true };
+    localStorage.setItem(SUB_KEY, JSON.stringify(subs));
+    // Sync grant to Firebase so patient can access from any device
+    saveSubFirebase(key, subs[key]);
+    document.getElementById('grantName').value = '';
+    document.getElementById('grantTxn').value = '';
+    if (document.getElementById('grantPhone')) document.getElementById('grantPhone').value = '';
+    loadSubscriptions();
+    alert('✅ Subscription granted to ' + name + ' for ' + days + ' days!');
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+
+// ═══════════════════════════════════════════
+//  DATA BRIDGE — Import patient data
+// ═══════════════════════════════════════════
+let importFileData = null;
+
+function openImportModal(tab) {
+  document.getElementById('importModalOverlay').classList.add('active');
+  switchImpTab(tab || 'paste');
+  document.getElementById('importResult').className = 'import-result';
+}
+function closeImportModal() {
+  document.getElementById('importModalOverlay').classList.remove('active');
+  document.getElementById('importTextarea').value = '';
+  importFileData = null;
+  document.getElementById('importFileLabel').textContent = 'Tap to select the exported .json file';
+}
+
+function switchImpTab(tab) {
+  ['paste','file'].forEach(t => {
+    document.getElementById('impTab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('impPanel-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('importFileLabel').textContent = '✅ ' + file.name + ' selected';
+  const reader = new FileReader();
+  reader.onload = e => { importFileData = e.target.result; };
+  reader.readAsText(file);
+}
+
+function doImport(method) {
+  const resultEl = document.getElementById('importResult');
+  resultEl.className = 'import-result';
+
+  let raw = '';
+  if (method === 'paste') {
+    raw = document.getElementById('importTextarea').value.trim();
+  } else {
+    raw = importFileData || '';
+  }
+
+  if (!raw) {
+    resultEl.textContent = '⚠️ Nothing to import — please paste data or select a file first.';
+    resultEl.className = 'import-result err';
+    return;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    let pImported = 0, sImported = 0, pSkipped = 0;
+
+    // Import patients
+    if (data.patients && Array.isArray(data.patients)) {
+      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const existingTs = new Set(existing.map(r => r.timestamp));
+      const newOnes = data.patients.filter(r => r.timestamp && !existingTs.has(r.timestamp));
+      const merged = [...newOnes, ...existing];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      pImported = newOnes.length;
+      pSkipped  = data.patients.length - newOnes.length;
+    }
+
+    // Import subscriptions
+    if (data.subscriptions && typeof data.subscriptions === 'object') {
+      const existingSubs = JSON.parse(localStorage.getItem(SUB_KEY) || '{}');
+      const merged = { ...data.subscriptions, ...existingSubs }; // existing takes priority
+      localStorage.setItem(SUB_KEY, JSON.stringify(merged));
+      sImported = Object.keys(data.subscriptions).length;
+    }
+
+    // Import usage counts
+    if (data.usage && typeof data.usage === 'object') {
+      const existingUsage = JSON.parse(localStorage.getItem('swasthya_usage') || '{}');
+      const merged = { ...existingUsage, ...data.usage };
+      localStorage.setItem('swasthya_usage', JSON.stringify(merged));
+    }
+
+    const msg = `✅ Import successful! ${pImported} new patient${pImported!==1?'s':''} added${pSkipped>0?' ('+pSkipped+' duplicates skipped)':''}. ${sImported>0?sImported+' subscription records synced.':''}`;
+    resultEl.textContent = msg;
+    resultEl.className = 'import-result ok';
+    loadDashboard();
+    updateSyncStatus();
+
+  } catch(e) {
+    resultEl.textContent = '❌ Invalid data format. Please make sure you copied the full exported code. Error: ' + e.message;
+    resultEl.className = 'import-result err';
+  }
+}
+
+function updateSyncStatus() {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncStatus');
+  const fbDot = document.getElementById('fbDot');
+  const fbStatus = document.getElementById('fbStatus');
+  if (!dot || !txt) return;
+
+  if (allRecords.length > 0) {
+    dot.classList.add('live');
+    const lastDt = new Date(allRecords[0].timestamp).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    txt.textContent = allRecords.length + ' patient record' + (allRecords.length!==1?'s':'') + ' · Last: ' + lastDt;
+  } else {
+    dot.classList.remove('live');
+    txt.textContent = FIREBASE_ON ? 'Waiting for first patient...' : 'No records yet';
+  }
+
+  if (fbDot && fbStatus) {
+    if (FIREBASE_ON) {
+      fbDot.className = 'fb-dot on';
+      fbStatus.textContent = '🔥 Firebase Live';
+      document.getElementById('fbBadge').className = 'firebase-badge connected';
+    } else {
+      fbDot.className = 'fb-dot off';
+      fbStatus.textContent = 'Firebase: Setup needed';
+      document.getElementById('fbBadge').className = 'firebase-badge offline';
+    }
+  }
+}
+
+// Firebase real-time listener — detects new patients instantly
+function startFirebaseListener() {
+  if (!FIREBASE_ON || window._fbListening) return;
+  window._fbListening = true;
+  try {
+    const url = FIREBASE_DB_URL + '/patients.json';
+    const es  = new EventSource(url);
+    es.addEventListener('put', function(e) {
+      try {
+        const data = JSON.parse(e.data);
+        if (data && data.data) {
+          // New data — refresh dashboard
+          loadDashboard();
+          showLiveNotification();
+        }
+      } catch(err) {}
+    });
+    es.onerror = function() {
+      window._fbListening = false;
+      es.close();
+    };
+  } catch(e) {}
+}
+
+function showLiveNotification() {
+  const el = document.getElementById('liveAlert');
+  if (!el) return;
+  el.style.display = 'flex';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// ── Firebase connection test ──
+async function testFirebase() {
+  try {
+    // Test: read patients directly
+    const res = await fetch(FIREBASE_DB_URL + '/patients.json');
+    if (!res.ok) {
+      alert('Firebase HTTP error: ' + res.status);
+      return;
+    }
+    const data = await res.json();
+    if (!data) {
+      alert('Firebase patients path is empty.\nGenerate a new plan first.');
+      return;
+    }
+    const records = Object.values(data).filter(r => r && r.timestamp);
+    alert('Firebase OK! Found ' + records.length + ' patient(s).\nLoading now...');
+    allRecords = records.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(allRecords)); } catch(e) {}
+    renderStats(); renderCharts(); populateFilters(); applyFilters(); updateSyncStatus();
+  } catch(e) {
+    alert('Firebase error: ' + e.message);
+  }
+}
+</script>
+
+<!-- IMPORT DATA MODAL -->
+<div class="import-modal-overlay" id="importModalOverlay" onclick="if(event.target===this)closeImportModal()">
+  <div class="import-modal">
+    <div class="import-modal-hdr">
+      <div>
+        <div class="import-modal-title">📥 Import Patient Data</div>
+        <div class="import-modal-sub">Sync records from Patient Diet Advisor tool</div>
+      </div>
+      <button class="import-modal-close" onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="import-modal-body">
+      <div class="import-method-tabs">
+        <div class="imp-tab active" id="impTab-paste" onclick="switchImpTab('paste')">📋 Paste Code</div>
+        <div class="imp-tab" id="impTab-file" onclick="switchImpTab('file')">📂 Upload File</div>
+      </div>
+
+      <!-- PASTE tab -->
+      <div class="imp-panel active" id="impPanel-paste">
+        <div style="font-size:12px;color:#555;margin-bottom:8px">
+          In the Patient tool: tap <strong>⚙ Menu → Export Data for Doctor</strong>. 
+          Copy the code and paste it below.
+        </div>
+        <textarea class="import-textarea" id="importTextarea" placeholder='Paste the exported data code here...
+
+Example: {"patients":[...],"subscriptions":{...}}'></textarea>
+        <button class="btn-do-import" onclick="doImport('paste')">📥 Import This Data</button>
+      </div>
+
+      <!-- FILE tab -->
+      <div class="imp-panel" id="impPanel-file">
+        <div style="font-size:12px;color:#555;margin-bottom:10px">
+          In the Patient tool: tap <strong>⚙ Menu → Export Data for Doctor → Download File</strong>.
+          Then upload that file here.
+        </div>
+        <div class="import-file-zone">
+          <input type="file" id="importFileInput" accept=".json" onchange="handleImportFile(this)"/>
+          <div class="import-file-zone-icon">📂</div>
+          <div class="import-file-zone-text" id="importFileLabel">Tap to select the exported .json file</div>
+        </div>
+        <button class="btn-do-import" onclick="doImport('file')">📥 Import This File</button>
+      </div>
+
+      <div class="import-result" id="importResult"></div>
+    </div>
+  </div>
+</div>
+
+
+<div id="liveAlert" style="display:none;position:fixed;top:70px;right:16px;z-index:500;background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(21,101,192,0.4);align-items:center;gap:8px;">🔔 New patient record received!</div>
+</body>
+</html>
